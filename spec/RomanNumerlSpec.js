@@ -1,15 +1,45 @@
 function convert(decimalNumber) {
     let numeral = '';
 
-    if( decimalNumber >= 1000  ){
-      numeral += 'M'.repeat(Math.floor(decimalNumber / 1000));
-      decimalNumber = decimalNumber % 1000;
+    // Some domain constants, just to describe the patterns more concisely
+    const thresholds = [
+      1, 5, 10, 50, 100, 500, 1000
+    ];
+    const repeating_chars = [ 1, 10, 100, 1000];
+
+    const numberMap = {
+      1: 'I',
+      5: 'V',
+      10: 'X',
+      50: 'L',
+      100: 'C',
+      500: 'D',
+      1000: 'M'
+    };
+
+    
+    function recursiveConvert ( decNum, curPower10, numeral ) {
+
+      const pow10 = Math.floor(decNum / curPower10);
+      if (pow10 > 3) {
+        throw new Error(`not valid, called with ${decNum} ${curPower10} ${numeral}`);
+      }
+      numeral += numberMap[curPower10].repeat(pow10);
+      decNum -= curPower10 * pow10;
+
+      if ( decNum >= curPower10 * 0.9 ) {
+        numeral += numberMap[curPower10 / 10 ] + numberMap[curPower10];
+        decNum -= curPower10 * 0.9;
+      }
+      // TODO call itself instead of returning
+
+      return [decNum, numeral]
     }
 
-    if( decimalNumber >= 900 ){
-      numeral += 'CM'
-      decimalNumber -= 900
-    }
+    [decimalNumber, numeral] = recursiveConvert(decimalNumber, 1000, '')
+
+  
+    
 
     if( decimalNumber >= 500  ){
       numeral += 'D'
@@ -21,15 +51,9 @@ function convert(decimalNumber) {
       decimalNumber -= 400
     }
 
-    if( decimalNumber >= 100  ){
-      numeral += 'C'.repeat(Math.floor(decimalNumber / 100));
-      decimalNumber = decimalNumber % 100;
-    }
+    [decimalNumber, numeral] = recursiveConvert(decimalNumber, 100, numeral)
 
-    if( decimalNumber >= 90 ){
-      numeral += 'XC'
-      decimalNumber -= 90
-    }
+    
 
     if( decimalNumber >= 50  ){
       numeral += 'L'
@@ -41,14 +65,7 @@ function convert(decimalNumber) {
       decimalNumber -= 40
     }
     
-    if ( decimalNumber / 10 > 0 ) {
-      numeral += 'X'.repeat(Math.floor(decimalNumber / 10));
-      decimalNumber = decimalNumber % 10;
-    }
-
-    if( decimalNumber === 9 ){
-      numeral += 'IX';
-    }
+    [decimalNumber, numeral] = recursiveConvert(decimalNumber, 10, numeral)
 
     if( decimalNumber >= 5 && decimalNumber <=8 ){
         numeral += 'V'
@@ -57,11 +74,10 @@ function convert(decimalNumber) {
 
     if (decimalNumber == 4) {
         numeral += 'IV';
+        decimalNumber -= 4;
     }
 
-    if( decimalNumber > 0 && decimalNumber <= 3 ){
-        numeral += 'I'.repeat(decimalNumber);
-    }
+    [decimalNumber, numeral] = recursiveConvert(decimalNumber, 1, numeral)
 
     return numeral;
 }
@@ -96,6 +112,7 @@ describe('Roman Numeral', () => {
         [ 60, 'LX' ],
         [ 80, 'LXXX' ],
         [ 90, 'XC' ],
+        [ 99, 'XCIX' ],
         [ 100, 'C' ],
         [ 140, 'CXL' ],
         [ 300, 'CCC' ],
